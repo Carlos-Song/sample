@@ -23,18 +23,21 @@ class SessionsController extends Controller
 
     public function store(Request $request)
     {
-       $credentials = $this->validate($request, [
-           'email' => 'required|email|max:255',
-           'password' => 'required'
-       ]);
+        $this->validate($request, [
+            'name' => 'required|max:50',
+            'email' => 'required|email|unique:users|max:255',
+            'password' => 'required|confirmed|min:6'
+        ]);
 
-       if (Auth::attempt($credentials, $request->has('remember'))) {
-            session()->flash('success', '欢迎回来！');
-            return redirect()->intended(route('users.show', [Auth::user()]));
-        } else {
-            session()->flash('danger', '很抱歉，您的邮箱和密码不匹配');
-            return redirect()->back();
-        }
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+
+        $this->sendEmailConfirmationTo($user);
+        session()->flash('success', '验证邮件已发送到你的注册邮箱上，请注意查收。');
+        return redirect('/');
     }
 
     public function destroy()
@@ -42,5 +45,19 @@ class SessionsController extends Controller
         Auth::logout();
         session()->flash('success', '您已成功退出！');
         return redirect('login');
+    }
+
+    protected function sendEmailConfirmationTo($user)
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'aufree@yousails.com';
+        $name = 'Aufree';
+        $to = $user->email;
+        $subject = "感谢注册 Sample 应用！请确认你的邮箱。";
+
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
     }
 }
