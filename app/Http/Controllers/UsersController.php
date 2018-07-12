@@ -121,4 +121,12 @@ class UsersController extends Controller
             $message->to($to)->subject($subject);
         });
     }
+
+    public function show(User $user)
+    {
+        $statuses = $user->statuses()
+                           ->orderBy('created_at', 'desc')
+                           ->paginate(30);
+        return view('users.show', compact('user', 'statuses'));
+    }
 }
