@@ -34,4 +34,9 @@ class User extends Authenticatable
         });
     }
 
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPassword($token));
+    }
+
 }
